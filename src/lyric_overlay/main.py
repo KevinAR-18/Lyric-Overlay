@@ -56,6 +56,7 @@ def main() -> int:
             spotify_redirect_uri=new_config.spotify_redirect_uri or "http://127.0.0.1:8888/callback",
             poll_interval_ms=config.poll_interval_ms,
             lrclib_enabled=config.lrclib_enabled,
+            lyric_offset_ms=new_config.lyric_offset_ms,
             overlay_bg_color=new_config.overlay_bg_color or config.overlay_bg_color,
             overlay_text_color=new_config.overlay_text_color or config.overlay_text_color,
         )

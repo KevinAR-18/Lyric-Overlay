@@ -21,6 +21,7 @@ class AppConfig:
     spotify_redirect_uri: str
     poll_interval_ms: int = 2500
     lrclib_enabled: bool = True
+    lyric_offset_ms: int = 0
     overlay_bg_color: str = "#0A0A0AEB"
     overlay_text_color: str = "#F4F4F4"
 
@@ -37,6 +38,7 @@ def load_config() -> AppConfig:
         ).strip(),
         poll_interval_ms=int(os.getenv("POLL_INTERVAL_MS", "2500")),
         lrclib_enabled=os.getenv("LRCLIB_ENABLED", "true").lower() == "true",
+        lyric_offset_ms=int(os.getenv("LYRIC_OFFSET_MS", "0")),
         overlay_bg_color=os.getenv("OVERLAY_BG_COLOR", "#0A0A0AEB").strip() or "#0A0A0AEB",
         overlay_text_color=os.getenv("OVERLAY_TEXT_COLOR", "#F4F4F4").strip() or "#F4F4F4",
     )
@@ -54,6 +56,7 @@ def save_config(config: AppConfig) -> None:
         f"SPOTIFY_REDIRECT_URI={config.spotify_redirect_uri}",
         f"POLL_INTERVAL_MS={config.poll_interval_ms}",
         f"LRCLIB_ENABLED={'true' if config.lrclib_enabled else 'false'}",
+        f"LYRIC_OFFSET_MS={config.lyric_offset_ms}",
         f"OVERLAY_BG_COLOR={config.overlay_bg_color}",
         f"OVERLAY_TEXT_COLOR={config.overlay_text_color}",
     ]

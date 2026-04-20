@@ -127,7 +127,8 @@ class AppController(QObject):
         else:
             self.overlay.show_status("")
 
-        active_index, active_line = self.sync_engine.current_line(track.progress_ms)
+        adjusted_progress_ms = max(0, track.progress_ms + self.config.lyric_offset_ms)
+        active_index, active_line = self.sync_engine.current_line(adjusted_progress_ms)
         next_line = self.sync_engine.next_line(active_index)
         self.overlay.set_lines(
             active_line.text if active_line else "",
