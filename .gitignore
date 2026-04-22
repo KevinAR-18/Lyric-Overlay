@@ -9,3 +9,4 @@ dist/
 *.ifp
 
 Lyricfy.spec
+.spotify_cache

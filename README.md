@@ -1,7 +1,7 @@
-# Spotify Lyric Overlay
+# Lyricfy
 
-A Windows desktop lyric overlay for Spotify built with Python and PySide6.  
-It shows synced lyrics in a compact top overlay inspired by Dynamic Island behavior.
+Lyricfy is a Windows desktop Spotify lyric overlay built with Python and PySide6.  
+It displays synced lyrics in a compact top overlay inspired by Dynamic Island behavior.
 
 ## Features
 
@@ -10,10 +10,12 @@ It shows synced lyrics in a compact top overlay inspired by Dynamic Island behav
 - Uses local `.lrc` files first, then falls back to LRCLIB
 - Compact always-on-top overlay
 - Draggable overlay with light snap behavior
+- Tray icon with `Show Overlay`, `Hide Overlay`, `Open Settings`, and `Exit`
 - Settings panel for Spotify credentials
 - Adjustable lyric offset in milliseconds
 - Custom overlay, text, lyric, and glow colors
 - Auto-hide track header after the first 10 seconds of a new song
+- First-run `.env` generation with default theme values
 
 ## Project Structure
 
@@ -34,6 +36,8 @@ It shows synced lyrics in a compact top overlay inspired by Dynamic Island behav
 │     └─ sync_engine.py
 ├─ .env
 ├─ .env.example
+├─ build.bat
+├─ icon.ico
 ├─ requirements.txt
 └─ README.md
 ```
@@ -66,13 +70,24 @@ pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-## Environment Variables
+## First Run and .env
 
-Example `.env`:
+Lyricfy supports automatic `.env` creation on first run.
+
+Behavior:
+
+- In development mode, it uses the project folder `.env`
+- In bundled `.exe` mode, it uses:
+
+```text
+%APPDATA%\Lyricfy\.env
+```
+
+If no `.env` exists yet, Lyricfy creates one automatically with these defaults:
 
 ```env
-SPOTIFY_CLIENT_ID=your_client_id
-SPOTIFY_CLIENT_SECRET=your_client_secret
+SPOTIFY_CLIENT_ID=
+SPOTIFY_CLIENT_SECRET=
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:8888/callback
 POLL_INTERVAL_MS=2500
 LRCLIB_ENABLED=true
@@ -108,7 +123,7 @@ The in-app settings panel supports:
 
 ## Lyric Offset
 
-Use `Lyric Offset (ms)` to fix timing drift:
+Use `Lyric Offset (ms)` to adjust sync timing:
 
 - Negative value: lyrics appear earlier
 - Positive value: lyrics appear later
@@ -140,6 +155,32 @@ Example file content:
 [00:18.20]And everything you do
 ```
 
+## Build
+
+To build the executable:
+
+```powershell
+build.bat
+```
+
+Output:
+
+```text
+dist\Lyricfy.exe
+```
+
+Bundled runtime data is stored in:
+
+```text
+%APPDATA%\Lyricfy\
+```
+
+That location is used for:
+
+- `.env`
+- `.spotify_cache`
+- `assets\lrc\`
+
 ## Sync Notes
 
 - Sync is based on Spotify `progress_ms`
@@ -154,15 +195,9 @@ Example file content:
 ## Current UI Behavior
 
 - The overlay opens at the top-center of the screen
+- The overlay does not appear as a normal taskbar window
+- The tray icon remains available for control and exit
 - The track header shows for about 10 seconds when a new track starts
 - Long lyrics can wrap to a second line
-- The close button exits the application
+- The `x` button hides the overlay
 - The settings button expands the configuration panel
-
-## Recommended Next Improvements
-
-- Save overlay position between launches
-- Add color pickers instead of manual hex input
-- Add glow strength and blur controls
-- Add per-track lyric offset
-- Cache LRCLIB results locally

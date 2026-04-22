@@ -77,7 +77,7 @@ class OverlayWindow(QWidget):
 
         self.close_button = QToolButton()
         self.close_button.setText("x")
-        self.close_button.setToolTip("Tray mode")
+        self.close_button.setToolTip("Hide Overlay")
         self.close_button.clicked.connect(self.request_close)
 
         self.compact_label = QLabel("Spotify tidak sedang memutar lagu")
@@ -420,14 +420,14 @@ class OverlayWindow(QWidget):
         event.accept()
 
     def request_close(self) -> None:
-        self.show_status("Lyricfy is running from the system tray.")
+        self.hide_to_tray()
 
     def closeEvent(self, event) -> None:  # noqa: N802
         if self._allow_exit:
             super().closeEvent(event)
             return
         event.ignore()
-        self.show_status("Lyricfy is running from the system tray.")
+        self.hide_to_tray()
 
     def show_from_tray(self) -> None:
         self.show()
