@@ -161,10 +161,10 @@ class AppController(QObject):
         normalized = message.strip()
         lowered = normalized.lower()
 
-        if "cooldown aktif" in lowered or "cooldown " in lowered:
+        if "cooldown active" in lowered or "cooldown " in lowered:
             return normalized
         if "429" in lowered or "rate limit" in lowered or "too many requests" in lowered:
-            return "Spotify API kena rate limit. Tunggu sebentar lalu coba lagi."
+            return "Spotify API rate limit reached. Please try again shortly."
         if "connectionerror" in lowered or "failed to establish a new connection" in lowered:
             return "Gagal terhubung ke Spotify API."
         if normalized:

@@ -47,7 +47,7 @@ class SpotifyClient:
         cooldown_seconds = self._cooldown_seconds_remaining()
         if cooldown_seconds > 0:
             raise RuntimeError(
-                f"Spotify API cooldown aktif. Coba lagi dalam {cooldown_seconds} dtk."
+                f"Spotify API cooldown active. Try again in {cooldown_seconds} seconds."
             )
 
         try:
@@ -56,7 +56,7 @@ class SpotifyClient:
             if exc.http_status == 429:
                 self._rate_limited_until = time.monotonic() + RATE_LIMIT_COOLDOWN_SECONDS
                 raise RuntimeError(
-                    f"Spotify API kena rate limit. Cooldown {RATE_LIMIT_COOLDOWN_SECONDS} dtk."
+                    f"Spotify API rate limit reached. Cooldown {RATE_LIMIT_COOLDOWN_SECONDS} seconds."
                 ) from exc
             raise RuntimeError(str(exc)) from exc
         if not payload or not payload.get("item"):
