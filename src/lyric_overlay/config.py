@@ -9,16 +9,21 @@ from dotenv import load_dotenv
 
 
 def _repo_base_dir() -> Path:
+    # Root proyek saat dijalankan dari source code.
     return Path(__file__).resolve().parents[2]
 
 
 def _runtime_base_dir() -> Path:
+    # Saat build .exe, file runtime mengikuti lokasi executable.
+    # Saat mode development, gunakan root repository.
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent
     return _repo_base_dir()
 
 
 def _resource_dir() -> Path:
+    # PyInstaller mengekstrak resource sementara ke _MEIPASS.
+    # Jika tidak ada, resource diambil langsung dari repository.
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:
         return Path(meipass)
@@ -26,6 +31,7 @@ def _resource_dir() -> Path:
 
 
 def _user_data_dir() -> Path:
+    # Data user disimpan di APPDATA pada Windows, dengan fallback ke home.
     appdata = os.getenv("APPDATA")
     if appdata:
         return Path(appdata) / "Lyricfy"
@@ -35,6 +41,8 @@ def _user_data_dir() -> Path:
 REPO_BASE_DIR = _repo_base_dir()
 BASE_DIR = _runtime_base_dir()
 RESOURCE_DIR = _resource_dir()
+# Pada build .exe, data writable dipisah ke folder user.
+# Saat development, data tetap berada di folder proyek.
 APP_DATA_DIR = _user_data_dir() if getattr(sys, "frozen", False) else BASE_DIR
 ASSETS_DIR = APP_DATA_DIR / "assets"
 LRC_DIR = ASSETS_DIR / "lrc"
@@ -46,6 +54,7 @@ ICON_FILE = RESOURCE_DIR / "icon.ico"
 
 @dataclass(slots=True)
 class AppConfig:
+    # Seluruh konfigurasi aplikasi yang dibaca dari / ditulis ke .env.
     spotify_client_id: str
     spotify_client_secret: str
     spotify_redirect_uri: str
@@ -59,6 +68,7 @@ class AppConfig:
 
 
 def default_config() -> AppConfig:
+    # Nilai default dipakai saat .env belum ada.
     return AppConfig(
         spotify_client_id="",
         spotify_client_secret="",
@@ -74,11 +84,14 @@ def default_config() -> AppConfig:
 
 
 def load_config() -> AppConfig:
+    # Prioritas utama adalah .env di folder runtime/app data.
+    # Jika belum ada, fallback ke .env di base directory.
     if ENV_FILE.exists():
         load_dotenv(ENV_FILE)
     elif FALLBACK_ENV_FILE.exists():
         load_dotenv(FALLBACK_ENV_FILE)
 
+    # Semua nilai environment dikonversi ke AppConfig agar mudah dipakai modul lain.
     return AppConfig(
         spotify_client_id=os.getenv("SPOTIFY_CLIENT_ID", "").strip(),
         spotify_client_secret=os.getenv("SPOTIFY_CLIENT_SECRET", "").strip(),
@@ -97,23 +110,28 @@ def load_config() -> AppConfig:
 
 
 def ensure_directories() -> None:
+    # Pastikan semua folder runtime tersedia sebelum aplikasi berjalan.
     APP_DATA_DIR.mkdir(parents=True, exist_ok=True)
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
     LRC_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def ensure_env_file() -> None:
+    # Jika file config sudah ada, tidak perlu membuat ulang.
     if ENV_FILE.exists():
         return
 
+    # Saat development, salin .env dari base directory jika tersedia.
     if FALLBACK_ENV_FILE.exists() and FALLBACK_ENV_FILE != ENV_FILE:
         ENV_FILE.write_text(FALLBACK_ENV_FILE.read_text(encoding="utf-8"), encoding="utf-8")
         return
 
+    # Jika tidak ada sumber config sama sekali, buat file dengan nilai default.
     save_config(default_config())
 
 
 def save_config(config: AppConfig) -> None:
+    # Simpan ulang seluruh konfigurasi ke format .env sederhana key=value.
     lines = [
         f"SPOTIFY_CLIENT_ID={config.spotify_client_id}",
         f"SPOTIFY_CLIENT_SECRET={config.spotify_client_secret}",

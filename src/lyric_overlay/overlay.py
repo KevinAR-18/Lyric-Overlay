@@ -324,6 +324,10 @@ class OverlayWindow(QWidget):
     def _emit_save(self) -> None:
         self.save_requested.emit(self.current_form_config())
 
+    def trigger_reconnect_shortcut(self) -> None:
+        self.show_status("Reloading Spotify...")
+        self.reconnect_requested.emit()
+
     def toggle_lyric_color_shortcut(self) -> None:
         current_color = (self.lyric_color_input.text().strip() or self._lyric_text_color).upper()
         next_color = self._DARK_LYRIC_COLOR
@@ -438,6 +442,10 @@ class OverlayWindow(QWidget):
         event.accept()
 
     def keyPressEvent(self, event) -> None:  # noqa: N802
+        if event.key() == Qt.Key.Key_R and event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            self.trigger_reconnect_shortcut()
+            event.accept()
+            return
         if event.key() == Qt.Key.Key_C and event.modifiers() & Qt.KeyboardModifier.ShiftModifier:
             self.toggle_lyric_color_shortcut()
             event.accept()

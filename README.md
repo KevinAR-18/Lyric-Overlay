@@ -13,7 +13,8 @@ Lyricfy is a Windows desktop lyric overlay for Spotify built with Python and PyS
 - In-app settings for Spotify credentials, redirect URI, lyric offset, and colors
 - Auto-created `.env` file on first launch
 - Spotify token cache stored separately from the source code in packaged builds
-- Quick lyric color toggle with `Shift+C`
+- Quick auto color mode toggle with `Shift+C`
+- Quick reload/reconnect shortcut with `Ctrl+R`
 
 ## Requirements
 
@@ -186,6 +187,11 @@ The build script packages the app as a one-file windowed executable and includes
 - The current track header is shown briefly when the song changes
 - If playback is paused, the overlay shows a paused status
 - If Spotify credentials are missing or invalid, the overlay prompts you to open settings
+
+## Keyboard Shortcuts
+
+- `Shift+C` toggles the lyric color mode automatically
+- `Ctrl+R` reloads the app connection without opening settings
 
 ## Notes
 
