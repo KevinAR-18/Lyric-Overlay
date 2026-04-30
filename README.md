@@ -241,3 +241,8 @@ The build script packages the app as a one-file windowed executable and includes
 
 - Spotify Web API for playback state
 - LRCLIB for synced lyric fallback
+
+## Author
+
+Created by Stephanus Kevin Andika Rata  
+Contact: kevinandika18@gmail.com
