@@ -10,10 +10,15 @@ from .models import LyricLine, LyricsData
 
 
 TIMESTAMP_RE = re.compile(r"\[(\d{2}):(\d{2})(?:[.:](\d{2,3}))?\]")
+LRCLIB_TIMEOUT_SECONDS = 5
 
 
 def sanitize_filename(value: str) -> str:
     return re.sub(r'[<>:"/\\|?*]', "", value).strip()
+
+
+def debug_log(message: str) -> None:
+    del message
 
 
 def parse_lrc(text: str, source: str) -> LyricsData:
@@ -81,15 +86,17 @@ class LyricsRepository:
         return LyricsData(source="local", lines=[])
 
     def _load_lrclib(self, artist: str, title: str, duration_ms: int) -> LyricsData:
+        duration_seconds = round(duration_ms / 1000)
+        network_failed = False
         try:
             response = self._session.get(
                 "https://lrclib.net/api/get",
                 params={
                     "artist_name": artist,
                     "track_name": title,
-                    "duration": round(duration_ms / 1000),
+                    "duration": duration_seconds,
                 },
-                timeout=5,
+                timeout=LRCLIB_TIMEOUT_SECONDS,
             )
             if response.status_code != 200:
                 return LyricsData(source="lrclib", lines=[])
@@ -104,7 +111,68 @@ class LyricsRepository:
                 self._save_fetched_lrc(artist=artist, title=title, text=synced)
             return lyrics
         except requests.RequestException:
+            network_failed = True
+
+        if network_failed:
+            return self._search_lrclib_on_network_failure(
+                artist=artist,
+                title=title,
+                duration_seconds=duration_seconds,
+            )
+
+        return LyricsData(source="lrclib", lines=[])
+
+    def _search_lrclib_on_network_failure(
+        self,
+        artist: str,
+        title: str,
+        duration_seconds: int,
+    ) -> LyricsData:
+        try:
+            response = self._session.get(
+                "https://lrclib.net/api/search",
+                params={
+                    "artist_name": artist,
+                    "track_name": title,
+                },
+                timeout=LRCLIB_TIMEOUT_SECONDS,
+            )
+            if response.status_code != 200:
+                return LyricsData(source="lrclib", lines=[])
+
+            results = response.json()
+            if not isinstance(results, list):
+                return LyricsData(source="lrclib", lines=[])
+
+            for item in results:
+                synced = (item.get("syncedLyrics") or "").strip()
+                if not synced:
+                    continue
+
+                item_artist = str(item.get("artistName") or "").casefold().strip()
+                item_title = str(item.get("trackName") or item.get("name") or "").casefold().strip()
+                if item_artist != artist.casefold().strip():
+                    continue
+                if item_title != title.casefold().strip():
+                    continue
+
+                item_duration = item.get("duration")
+                try:
+                    item_duration_seconds = int(round(float(item_duration)))
+                except (TypeError, ValueError):
+                    item_duration_seconds = 0
+
+                if item_duration_seconds and abs(item_duration_seconds - duration_seconds) > 2:
+                    continue
+
+                lyrics = parse_lrc(synced, source="lrclib")
+                if not lyrics.is_empty and self.auto_save_fetched_lrc:
+                    self._save_fetched_lrc(artist=artist, title=title, text=synced)
+                return lyrics
+        except requests.RequestException:
             return LyricsData(source="lrclib", lines=[])
+
+        return LyricsData(source="lrclib", lines=[])
 
     def set_lrclib_enabled(self, enabled: bool) -> None:
         self.lrclib_enabled = enabled

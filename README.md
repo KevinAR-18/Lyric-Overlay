@@ -8,6 +8,7 @@ Lyricfy is a lightweight Windows lyric overlay for Spotify built with Python and
 - Displays synced lyrics using Spotify playback progress
 - Checks local `.lrc` files first, then falls back to LRCLIB
 - Caches fetched LRCLIB lyrics as local `.lrc` files for future playback
+- Reuses downloaded lyric cache across app restarts
 - Retries lyric lookup automatically when a new track does not resolve on the first attempt
 - Compact frameless overlay that stays on top
 - Draggable overlay with snap-back behavior near the last saved position
@@ -16,6 +17,7 @@ Lyricfy is a lightweight Windows lyric overlay for Spotify built with Python and
 - Auto-created `.env` file on first launch
 - Separate Spotify token cache for packaged builds
 - Automatic `.lrc` cache for lyrics fetched from LRCLIB
+- Faster first window open by connecting to Spotify after the overlay is shown
 - Displays `Fetching lyrics...` while lyric lookup is still in progress
 - `Shift+C` shortcut to toggle lyric color quickly
 - `Ctrl+R` shortcut to reload Spotify connection quickly
@@ -216,6 +218,8 @@ Lyrics fetched from LRCLIB can be cached automatically as `.lrc` files in `asset
 
 If you want to disable this behavior, set `AUTO_SAVE_FETCHED_LRC=false` in `.env` or uncheck it in the settings panel and save.
 
+If an LRCLIB exact lookup fails because of a network timeout or request error, Lyricfy can retry using a narrower search fallback before giving up.
+
 ## Build
 
 Build the standalone executable with:
@@ -235,6 +239,7 @@ The build script packages the app as a one-file windowed executable and includes
 ## Runtime Behavior
 
 - The overlay opens near the top-center of the screen
+- The overlay can appear first and continue connecting to Spotify in the background during startup
 - Closing the overlay hides it to the system tray instead of exiting
 - Hiding the overlay pauses Spotify polling until the overlay is shown again
 - The tray icon remains available for reopening settings or exiting the app

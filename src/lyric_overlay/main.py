@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, QtMsgType, qInstallMessageHandler
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 
@@ -33,7 +33,15 @@ def build_spotify_client(config: AppConfig) -> SpotifyClient | None:
         return None
 
 
+def qt_message_handler(mode, context, message) -> None:
+    del context
+    if mode == QtMsgType.QtWarningMsg and "QWindowsWindow::setGeometry" in message:
+        return
+    print(message, flush=True)
+
+
 def main() -> int:
+    qInstallMessageHandler(qt_message_handler)
     ensure_directories()
     ensure_env_file()
     config = load_config()
@@ -94,13 +102,8 @@ def main() -> int:
         )
         tray_icon.show()
 
-    spotify_client = build_spotify_client(config)
-    if spotify_client is None:
-        overlay.set_track(None)
-        overlay.set_lines("Open Settings to add Spotify credentials", "Then click Save and Reload Spotify")
-
     controller = AppController(
-        spotify_client=spotify_client,
+        spotify_client=None,
         lyrics_repository=LyricsRepository(
             lrclib_enabled=config.lrclib_enabled,
             auto_save_fetched_lrc=config.auto_save_fetched_lrc,
@@ -173,8 +176,22 @@ def main() -> int:
     overlay.overlay_hidden.connect(controller.pause_polling)
     overlay.overlay_shown.connect(controller.resume_polling)
     app.aboutToQuit.connect(controller.stop)
+
+    def initialize_spotify() -> None:
+        latest = load_config()
+        spotify_client = build_spotify_client(latest)
+        if spotify_client is None:
+            controller.reconnect(None, latest)
+            overlay.set_track(None)
+            overlay.set_lines("Open Settings to add Spotify credentials", "Then click Save and Reload Spotify")
+            return
+        controller.reconnect(spotify_client, latest)
+
+    overlay.set_track(None)
+    overlay.set_lines("Starting Lyricfy...", "Connecting to Spotify")
+    overlay.show_status("Connecting to Spotify...")
     overlay.show()
-    QTimer.singleShot(0, controller.start)
+    QTimer.singleShot(0, initialize_spotify)
     return app.exec()
 
 

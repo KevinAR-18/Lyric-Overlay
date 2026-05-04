@@ -331,7 +331,7 @@ class OverlayWindow(QWidget):
         if visibility_changed:
             self.status_label.setVisible(new_visible)
         self._refresh_compact_text()
-        if visibility_changed and not self._expanded:
+        if (text_changed or visibility_changed) and not self._expanded:
             self._apply_window_mode()
 
     def toggle_settings(self) -> None:
@@ -459,7 +459,7 @@ class OverlayWindow(QWidget):
         if self._expanded:
             target_height = 470
         else:
-            target_height = 82 if self.compact_label.heightForWidth(self.compact_label.width()) <= 24 else 100
+            target_height = self._compact_target_height()
         target_size = (target_width, target_height)
         self.setMinimumSize(target_width, 76)
         if self._last_window_size == target_size:
@@ -467,6 +467,40 @@ class OverlayWindow(QWidget):
         self._last_window_size = target_size
         self.resize(target_width, target_height)
         self._reposition_after_resize()
+
+    def _compact_target_height(self) -> int:
+        # Recalculate compact height only from visible compact-mode widgets.
+        self.layout().activate()
+
+        outer_layout = self.layout()
+        outer_margins = outer_layout.contentsMargins()
+        outer_height = outer_margins.top() + outer_margins.bottom()
+
+        card_widget = self.findChild(QWidget, "card")
+        card_layout = card_widget.layout() if card_widget is not None else None
+        card_margins = card_layout.contentsMargins() if card_layout is not None else outer_margins
+        spacing = card_layout.spacing() if card_layout is not None else 0
+
+        content_width = max(320, self.width() - outer_margins.left() - outer_margins.right())
+        card_width = max(280, content_width - card_margins.left() - card_margins.right())
+        compact_width = max(240, card_width - 64)
+
+        compact_height = self.compact_label.heightForWidth(compact_width)
+        if compact_height <= 0:
+            compact_height = self.compact_label.sizeHint().height()
+
+        total = outer_height + card_margins.top() + card_margins.bottom() + compact_height
+
+        visible_extra_heights = []
+        if self.track_title_label.isVisible():
+            visible_extra_heights.append(self.track_title_label.sizeHint().height())
+        if self.status_label.isVisible():
+            visible_extra_heights.append(self.status_label.sizeHint().height())
+
+        if visible_extra_heights:
+            total += spacing * len(visible_extra_heights) + sum(visible_extra_heights)
+
+        return max(76, total)
 
     def _position_top_center(self) -> None:
         screen = self.screen() or QApplication.primaryScreen()
